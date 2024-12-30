@@ -5,9 +5,9 @@ const {readdirSync} = require('fs')
 const app = express()
 const corsConfig={
     origin: process.env.Client_URL,
-    credential:true,
-    methods:["GET","POST","PUT","DELETE"]
-}
+    credentials:true,
+    method:["GET","POST","PUT","DELETE"]
+};
 app.options("",cors(corsConfig));
 require('dotenv').config()
 
