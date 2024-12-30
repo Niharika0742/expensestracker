@@ -1,36 +1,37 @@
 const express = require('express');
 const cors = require('cors');
 const { db } = require('./db/db');
-const {readdirSync} = require('fs');
 require('dotenv').config();
 
 const app = express();
 
 const corsConfig = {
-    origin: process.env.Client_URL,
+    origin: process.env.Client_URL || '*',
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"]
 };
-
-app.options("", cors(corsConfig));
 
 // Middleware
 app.use(express.json());
 app.use(cors(corsConfig));
 
-// Routes using readdirSync (will work locally)
-if (process.env.NODE_ENV !== 'production') {
-    readdirSync('./routes').map((route) => app.use('/api/v1', require('./routes/' + route)));
-} else {
-    // For Vercel, directly require your route files
-    // This assumes your routes folder contains these files - adjust according to your actual route files
-    app.use('/api/v1', require('./routes/expenses'));
-    app.use('/api/v1', require('./routes/income'));
-    // Add other routes as needed
-}
+// Import the transactions router
+app.use('/api/v1', require('./routes/transactions'));
 
-// Database connection
-db();
+// Database connection with error handling
+const connectDB = async () => {
+    try {
+        await db();
+        console.log('Database connected successfully');
+    } catch (error) {
+        console.error('Database connection failed:', error);
+        // Log the specific error details for debugging
+        console.error('Error details:', error.message);
+    }
+};
+
+// Initialize database connection
+connectDB();
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {
@@ -40,5 +41,22 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-// For Vercel
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error occurred:', err);
+    res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+});
+
+// Handle 404 routes
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found'
+    });
+});
+
 module.exports = app;
