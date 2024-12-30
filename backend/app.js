@@ -4,7 +4,7 @@ const { db } = require('./db/db');
 const {readdirSync} = require('fs')
 const app = express()
 const corsConfig={
-    origin:"*",
+    origin: process.env.Client_URL,
     credential:true,
     methods:["GET","POST","PUT","DELETE"]
 }
